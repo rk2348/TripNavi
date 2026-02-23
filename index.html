@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>旅のプラン整理メモ</title>
+  <title>旅のプラン整理メモ - 統合版</title>
   <style>
     :root {
-      --primary-color: #4A90E2;
+      --primary-color: #2C3E50;
+      --accent-color: #E74C3C;
       --bg-color: #F4F7F6;
       --card-bg: #FFFFFF;
       --text-color: #333333;
       --sync-color: #27AE60;
+      --border-color: #E0E0E0;
     }
     body {
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
@@ -18,47 +20,108 @@
       color: var(--text-color);
       line-height: 1.6;
       margin: 0;
-      padding: 20px;
+      padding: 0; /* ヘッダー固定のため調整 */
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
+    
+    /* 上部固定の操作パネル（ヘッダー） */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background-color: #ffffff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 15px 20px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
     }
-    h1 {
-      text-align: center;
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: bold;
       color: var(--primary-color);
-      margin-bottom: 30px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
+    .sync-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background-color: #E8F5E9;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid var(--sync-color);
+    }
+    .sync-controls input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 150px;
+    }
+    .sync-status {
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: var(--sync-color);
+      margin-left: 10px;
+      display: none;
+    }
+
+    /* メインコンテンツのグリッドレイアウト */
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* PCでは2カラム */
+      gap: 20px;
+    }
+    
+    /* スマホ表示時は1カラムにする */
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      .sticky-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    /* 各セクションのカードデザイン */
     .card {
       background: var(--card-bg);
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      border: 1px solid var(--border-color);
+    }
+    .card.full-width {
+      grid-column: 1 / -1; /* 全幅を使う */
     }
     .card h2 {
       margin-top: 0;
-      border-bottom: 2px solid var(--primary-color);
+      border-bottom: 3px solid var(--primary-color);
       padding-bottom: 10px;
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .sync-card {
-      background-color: #E8F5E9;
-      border: 2px solid var(--sync-color);
-    }
-    .sync-card h2 {
-      color: var(--sync-color);
-      border-bottom-color: var(--sync-color);
-    }
+    
+    /* 入力フォームのデザイン */
     .form-group {
       margin-bottom: 15px;
     }
     label {
       display: block;
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       font-size: 0.9rem;
+      color: #555;
     }
     input[type="text"],
     input[type="number"],
@@ -68,13 +131,19 @@
       width: 100%;
       padding: 10px;
       border: 1px solid #ccc;
-      border-radius: 5px;
+      border-radius: 6px;
       box-sizing: border-box;
       font-family: inherit;
+      transition: border-color 0.3s;
+    }
+    input:focus, textarea:focus {
+      border-color: var(--primary-color);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(44, 62, 80, 0.1);
     }
     textarea {
       resize: vertical;
-      min-height: 100px;
+      min-height: 120px;
     }
     .row {
       display: flex;
@@ -83,100 +152,127 @@
     }
     .row .form-group {
       flex: 1;
-      min-width: 200px;
+      min-width: 180px;
+    }
+    
+    /* 日程別スケジュールのデザイン */
+    .schedule-day {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--primary-color);
+    }
+    .schedule-day h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: var(--primary-color);
+      margin-bottom: 10px;
     }
     
     /* 持ち物リスト用デザイン */
     .checklist-group {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
     }
     .checklist-item {
       display: flex;
       align-items: center;
       font-size: 0.95rem;
+      background-color: #fcfcfc;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #eee;
     }
     .checklist-item input[type="checkbox"] {
       width: 18px;
       height: 18px;
-      margin-right: 8px;
+      margin-right: 10px;
       cursor: pointer;
     }
     .checklist-item input[type="text"] {
-      padding: 5px;
+      padding: 4px 8px;
       margin-left: 5px;
       width: calc(100% - 30px);
+      border: none;
+      background: transparent;
+      border-bottom: 1px dashed #ccc;
+      border-radius: 0;
     }
 
     /* 費用計算用デザイン */
+    .cost-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
     .total-box {
       background-color: #E8F4FD;
-      padding: 15px;
-      border-radius: 5px;
+      padding: 20px;
+      border-radius: 8px;
       text-align: right;
       font-size: 1.2rem;
       font-weight: bold;
       color: var(--primary-color);
+      margin-top: 15px;
+      border-left: 5px solid #3498DB;
     }
     .total-box input {
       background: transparent;
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: bold;
       color: var(--primary-color);
       text-align: right;
       width: 150px;
       padding: 0;
     }
-
-    .buttons {
-      text-align: center;
-      margin-top: 30px;
+    .per-person {
+      font-size: 1rem;
+      color: #e67e22;
+      margin-top: 10px;
     }
+    .per-person input {
+      font-size: 1.4rem;
+      color: #e67e22;
+      width: 120px;
+    }
+
+    /* ボタン群 */
     button {
       background-color: var(--primary-color);
       color: white;
       border: none;
-      padding: 12px 24px;
-      border-radius: 5px;
+      padding: 10px 20px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: bold;
-      margin: 5px;
-      transition: background-color 0.3s;
+      transition: opacity 0.3s;
     }
     button:hover {
-      background-color: #357ABD;
+      opacity: 0.8;
     }
-    .btn-sync {
-      background-color: var(--sync-color);
-      margin-top: 25px;
-      width: 100%;
-    }
-    .btn-sync:hover {
-      background-color: #219653;
-    }
-    .btn-clear {
-      background-color: #E74C3C;
-    }
-    .btn-clear:hover {
-      background-color: #C0392B;
-    }
-    .sync-status {
-      font-size: 0.9rem;
-      font-weight: bold;
-      color: var(--sync-color);
+    .btn-sync { background-color: var(--sync-color); }
+    .btn-refresh { background-color: #3498DB; display: flex; align-items: center; gap: 5px; }
+    .btn-danger { background-color: var(--accent-color); }
+    
+    .bottom-actions {
+      grid-column: 1 / -1;
       text-align: center;
-      margin-top: 10px;
-      display: none;
+      margin-top: 20px;
+      margin-bottom: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
     }
     
     /* 印刷時の設定 */
     @media print {
       body { background-color: white; padding: 0; }
-      .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
-      .sync-card, .buttons { display: none; }
+      .sticky-header, .bottom-actions { display: none; }
+      .container { display: block; }
+      .card { box-shadow: none; border: 1px solid #000; margin-bottom: 20px; page-break-inside: avoid; }
       input, textarea { border: none; background: transparent; resize: none; }
       input[type="number"] { -moz-appearance: textfield; }
       input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -185,138 +281,152 @@
 </head>
 <body>
 
+  <div class="sticky-header">
+    <div class="header-title">✈️ 旅のプラン整理メモ</div>
+    <div class="sync-controls">
+      <label for="share-id" style="margin:0; font-size:0.85rem;">共有ID:</label>
+      <input type="text" id="share-id" placeholder="例：kanazawa-tokyo">
+      <button id="btn-start-sync" class="btn-sync">同期</button>
+      <button id="btn-refresh" class="btn-refresh">🔄 最新を取得</button>
+      <span id="sync-status-text" class="sync-status">✅ 自動同期中</span>
+    </div>
+  </div>
+
   <div class="container">
-    <h1>✈️ 旅のプラン整理メモ</h1>
+    
+    <div class="column-left" style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <div class="card">
+        <h2>📝 基本情報</h2>
+        <div class="form-group">
+          <label for="trip-title">旅行のタイトル・目的地</label>
+          <input type="text" id="trip-title" class="shared-data" placeholder="例：石川〜東京 2泊3日旅行">
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label for="date-start">出発日</label>
+            <input type="date" id="date-start" class="shared-data">
+          </div>
+          <div class="form-group">
+            <label for="date-end">帰宅日</label>
+            <input type="date" id="date-end" class="shared-data">
+          </div>
+          <div class="form-group" style="flex: 0.5;">
+            <label for="trip-people">参加人数（人）</label>
+            <input type="number" id="trip-people" class="cost-input shared-data" placeholder="4" min="1" value="4">
+          </div>
+        </div>
+      </div>
 
-    <div class="card sync-card">
-      <h2>🔄 リアルタイム共有</h2>
-      <p style="font-size: 0.9rem; margin-top: 0;">お互いに同じ「共有ID」を入力して同期を開始すると、プランを共同編集できます。（※持ち物リストは個人の端末にのみ保存され、共有されません）</p>
-      <div class="row">
-        <div class="form-group" style="flex: 2;">
-          <label for="share-id">共有ID（お好きな英数字を決めてください）</label>
-          <input type="text" id="share-id" placeholder="例：trip2026-tokyo">
+      <div class="card">
+        <h2>🗺️ 日程表・スケジュール</h2>
+        
+        <div class="schedule-day">
+          <h3>Day 1（1日目）</h3>
+          <textarea id="schedule-day1" class="shared-data" placeholder="例：&#10;22:30 金沢駅西口 集合&#10;23:00 夜行バス出発"></textarea>
         </div>
-        <div class="form-group" style="flex: 1;">
-          <button id="btn-start-sync" class="btn-sync">手動で同期を開始する</button>
+        
+        <div class="schedule-day">
+          <h3>Day 2（2日目）</h3>
+          <textarea id="schedule-day2" class="shared-data" placeholder="例：&#10;06:30 バスタ新宿 到着&#10;10:00 〇〇で観光&#10;15:00 ホテルチェックイン"></textarea>
         </div>
-      </div>
-      <div id="sync-status-text" class="sync-status">✅ 現在「<span id="display-sync-id"></span>」で自動同期中です</div>
-    </div>
 
-    <div class="card">
-      <h2>📝 基本情報</h2>
-      <div class="form-group">
-        <label for="trip-title">旅行のタイトル・目的地</label>
-        <input type="text" id="trip-title" class="shared-data" placeholder="例：石川〜東京 旅行（4人）">
-      </div>
-      <div class="row">
-        <div class="form-group">
-          <label for="date-start">出発日</label>
-          <input type="date" id="date-start" class="shared-data">
-        </div>
-        <div class="form-group">
-          <label for="date-end">帰宅日</label>
-          <input type="date" id="date-end" class="shared-data">
+        <div class="schedule-day">
+          <h3>Day 3（3日目）</h3>
+          <textarea id="schedule-day3" class="shared-data" placeholder="例：&#10;10:00 チェックアウト&#10;23:30 バスタ新宿発 バス乗車"></textarea>
         </div>
       </div>
-    </div>
+    </div> <div class="column-right" style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <div class="card">
+        <h2>🚌 交通アクセス（夜行バス・新幹線など）</h2>
+        <div class="row">
+          <div class="form-group">
+            <label for="bus-depart-time">【行き】乗車時間・場所</label>
+            <input type="text" id="bus-depart-time" class="shared-data" placeholder="23:00 金沢駅西口">
+          </div>
+          <div class="form-group">
+            <label for="bus-arrive-time">【行き】到着時間・場所</label>
+            <input type="text" id="bus-arrive-time" class="shared-data" placeholder="06:30 バスタ新宿">
+          </div>
+        </div>
+        <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc;">
+          <div class="form-group">
+            <label for="bus-return-time">【帰り】乗車時間・場所</label>
+            <input type="text" id="bus-return-time" class="shared-data" placeholder="23:30 バスタ新宿">
+          </div>
+          <div class="form-group">
+            <label for="bus-return-arrive">【帰り】到着時間・場所</label>
+            <input type="text" id="bus-return-arrive" class="shared-data" placeholder="07:00 金沢駅">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 10px;">
+          <label for="bus-url">予約サイトのURL・予約番号</label>
+          <input type="text" id="bus-url" class="shared-data" placeholder="URLや、予約番号123456 など">
+        </div>
+      </div>
 
-    <div class="card">
-      <h2>🚌 交通手段（夜行バス・新幹線など）</h2>
-      <div class="row">
+      <div class="card">
+        <h2>🏨 宿泊施設</h2>
         <div class="form-group">
-          <label for="bus-depart-time">行き：出発時間・乗車場所</label>
-          <input type="text" id="bus-depart-time" class="shared-data" placeholder="例：22:30 金沢駅西口">
+          <label for="hotel-name">ホテル・宿の名前</label>
+          <input type="text" id="hotel-name" class="shared-data" placeholder="例：ホテル〇〇東京">
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label for="check-in">チェックイン</label>
+            <input type="time" id="check-in" class="shared-data">
+          </div>
+          <div class="form-group">
+            <label for="check-out">チェックアウト</label>
+            <input type="time" id="check-out" class="shared-data">
+          </div>
         </div>
         <div class="form-group">
-          <label for="bus-arrive-time">行き：到着時間・降車場所</label>
-          <input type="text" id="bus-arrive-time" class="shared-data" placeholder="例：06:30 バスタ新宿">
+          <label for="hotel-address">住所・アクセス / 予約番号</label>
+          <input type="text" id="hotel-address" class="shared-data" placeholder="住所、URL、予約番号など">
         </div>
       </div>
-      <div class="row">
-        <div class="form-group">
-          <label for="bus-return-time">帰り：出発時間・乗車場所</label>
-          <input type="text" id="bus-return-time" class="shared-data" placeholder="例：23:30 バスタ新宿">
-        </div>
-        <div class="form-group">
-          <label for="bus-return-arrive">帰り：到着時間・降車場所</label>
-          <input type="text" id="bus-return-arrive" class="shared-data" placeholder="例：07:00 金沢駅西口">
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="bus-url">予約サイトのURL・予約番号</label>
-        <input type="text" id="bus-url" class="shared-data" placeholder="URLや、予約番号123456 など">
-      </div>
-    </div>
 
-    <div class="card">
-      <h2>🏨 宿泊先</h2>
-      <div class="form-group">
-        <label for="hotel-name">ホテル・宿の名前</label>
-        <input type="text" id="hotel-name" class="shared-data" placeholder="例：ホテル〇〇東京">
-      </div>
-      <div class="row">
-        <div class="form-group">
-          <label for="check-in">チェックイン時間</label>
-          <input type="time" id="check-in" class="shared-data">
+      <div class="card">
+        <h2>💴 費用シミュレーション</h2>
+        <div class="cost-grid">
+          <div class="form-group">
+            <label for="cost-transport">交通費（総額）</label>
+            <input type="number" id="cost-transport" class="cost-calc shared-data" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label for="cost-hotel">宿泊費（総額）</label>
+            <input type="number" id="cost-hotel" class="cost-calc shared-data" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label for="cost-food">食費・宴会代（総額）</label>
+            <input type="number" id="cost-food" class="cost-calc shared-data" placeholder="0" min="0">
+          </div>
+          <div class="form-group">
+            <label for="cost-activity">観光・チケット代（総額）</label>
+            <input type="number" id="cost-activity" class="cost-calc shared-data" placeholder="0" min="0">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="check-out">チェックアウト時間</label>
-          <input type="time" id="check-out" class="shared-data">
+        <div class="total-box">
+          旅行全体の概算合計： <input type="text" id="cost-total" readonly value="0"> 円
+          <div class="per-person">
+            （1人あたり：約 <input type="text" id="cost-per-person" readonly value="0"> 円）
+          </div>
         </div>
       </div>
-      <div class="form-group">
-        <label for="hotel-address">住所・アクセス</label>
-        <input type="text" id="hotel-address" class="shared-data" placeholder="例：新宿駅徒歩5分（東京都新宿区〜）">
-      </div>
-      <div class="form-group">
-        <label for="hotel-url">予約サイトのURL・予約番号</label>
-        <input type="text" id="hotel-url" class="shared-data" placeholder="URLや予約番号をメモ">
-      </div>
-    </div>
 
-    <div class="card">
-      <h2>💴 費用メモ（概算）</h2>
-      <div class="row">
-        <div class="form-group">
-          <label for="cost-transport">交通費（円）</label>
-          <input type="number" id="cost-transport" class="cost-input shared-data" placeholder="0" min="0">
-        </div>
-        <div class="form-group">
-          <label for="cost-hotel">宿泊費（円）</label>
-          <input type="number" id="cost-hotel" class="cost-input shared-data" placeholder="0" min="0">
-        </div>
-      </div>
-      <div class="row">
-        <div class="form-group">
-          <label for="cost-food">食費（円）</label>
-          <input type="number" id="cost-food" class="cost-input shared-data" placeholder="0" min="0">
-        </div>
-        <div class="form-group">
-          <label for="cost-activity">観光・アクティビティ代（円）</label>
-          <input type="number" id="cost-activity" class="cost-input shared-data" placeholder="0" min="0">
-        </div>
-        <div class="form-group">
-          <label for="cost-other">お土産・その他（円）</label>
-          <input type="number" id="cost-other" class="cost-input shared-data" placeholder="0" min="0">
-        </div>
-      </div>
-      <div class="total-box">
-        合計： <input type="text" id="cost-total" readonly value="0"> 円
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>🎒 持ち物リスト（※自分専用メモ）</h2>
+    </div> <div class="card full-width">
+      <h2>🎒 持ち物リスト（※自分専用メモ / 共有されません）</h2>
       <div class="checklist-group">
-        <label class="checklist-item"><input type="checkbox" id="chk-1" class="private-data"> 現金・クレジットカード・身分証</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-2" class="private-data"> スマホ・充電器・モバイルバッテリー</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-3" class="private-data"> 着替え・下着・靴下</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-4" class="private-data"> 洗面用具・スキンケア・化粧品</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-5" class="private-data"> 常備薬・コンタクトレンズ</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-6" class="private-data"> パジャマ・ルームウェア</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-7" class="private-data"> 折りたたみ傘・雨具</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-8" class="private-data"> ビニール袋（洗濯物・ゴミ用）</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-1" class="private-data"> 財布・身分証</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-2" class="private-data"> スマホ・モバイルバッテリー</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-3" class="private-data"> 着替え・下着類</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-4" class="private-data"> 洗面・スキンケア用品</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-5" class="private-data"> 常備薬・コンタクト</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-6" class="private-data"> パジャマ・部屋着</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-7" class="private-data"> 折りたたみ傘</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-8" class="private-data"> ビニール袋・エコバッグ</label>
         
         <div class="checklist-item"><input type="checkbox" id="chk-free-1" class="private-data"><input type="text" id="txt-free-1" class="private-data" placeholder="自由に入力"></div>
         <div class="checklist-item"><input type="checkbox" id="chk-free-2" class="private-data"><input type="text" id="txt-free-2" class="private-data" placeholder="自由に入力"></div>
@@ -325,23 +435,15 @@
       </div>
     </div>
 
-    <div class="card">
-      <h2>🗺️ 行きたい場所・スケジュール・メモ</h2>
-      <div class="form-group">
-        <label for="schedule-memo">自由に書き込めるメモ帳（お店のURLや食べたいものなど）</label>
-        <textarea id="schedule-memo" class="shared-data" placeholder="・1日目昼：〇〇食堂でランチ（URL）&#10;・行きたいカフェ：〇〇コーヒー&#10;・お土産に〇〇を買う"></textarea>
-      </div>
+    <div class="bottom-actions">
+      <button onclick="window.print()" style="background-color: #7f8c8d;">🖨️ PDF保存 / 印刷してしおりにする</button>
+      <button class="btn-danger" id="btn-clear-data" style="margin-left: 15px;">🗑️ データをリセット</button>
     </div>
 
-    <div class="buttons">
-      <button onclick="window.print()">🖨️ PDFとして保存 / 印刷</button>
-      <button class="btn-clear" id="btn-clear-data">🗑️ データをリセット</button>
-    </div>
-  </div>
-
-  <script type="module">
+  </div> <script type="module">
+    // Firebaseモジュールのインポート（get関数を新たに追加）
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    import { getDatabase, ref, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
     // いただいた情報 ＋ データベースURLを追加した設定
     const firebaseConfig = {
@@ -358,19 +460,30 @@
     let currentSyncId = null;
     let isSyncing = false;
 
+    // 要素の取得
     const sharedInputs = document.querySelectorAll('.shared-data');
     const privateInputs = document.querySelectorAll('.private-data');
-    const allInputs = document.querySelectorAll('input:not(#share-id), textarea');
+    const allInputs = document.querySelectorAll('input:not(#share-id):not(#cost-total):not(#cost-per-person), textarea');
 
+    // 費用の合計と、1人あたりの金額を計算する関数
     function calculateTotal() {
       let total = 0;
-      document.querySelectorAll('.cost-input').forEach(input => {
+      // .cost-calc クラスを持つ入力欄を合算
+      document.querySelectorAll('.cost-calc').forEach(input => {
         const val = parseInt(input.value, 10);
-        if (!isNaN(val)) {
-          total += val;
-        }
+        if (!isNaN(val)) total += val;
       });
       document.getElementById('cost-total').value = total.toLocaleString();
+
+      // 人数で割って1人あたりの金額を計算
+      const peopleInput = document.getElementById('trip-people').value;
+      const people = parseInt(peopleInput, 10);
+      if (!isNaN(people) && people > 0) {
+        const perPerson = Math.ceil(total / people); // 切り上げ
+        document.getElementById('cost-per-person').value = perPerson.toLocaleString();
+      } else {
+        document.getElementById('cost-per-person').value = "0";
+      }
     }
 
     // 同期処理をまとめた関数（isAutoがtrueの場合はアラートを出さない）
@@ -392,11 +505,12 @@
       // 次回自動同期のためにIDを保存
       localStorage.setItem('savedSyncId', shareId);
       
-      document.getElementById('display-sync-id').textContent = shareId;
-      document.getElementById('sync-status-text').style.display = 'block';
+      document.getElementById('sync-status-text').style.display = 'inline-block';
       
       const tripRef = ref(db, 'trips/' + currentSyncId);
       const initialData = {};
+      
+      // ローカルにあるデータをFirebaseに統合
       sharedInputs.forEach(input => {
         if (input.value) initialData[input.id] = input.value;
       });
@@ -404,10 +518,12 @@
         update(tripRef, initialData);
       }
 
+      // リアルタイム監視（誰かが更新したら自動反映）
       onValue(tripRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
           sharedInputs.forEach(input => {
+            // 自分が今入力中の項目は上書きしない（カーソル飛び防止）
             if (data[input.id] !== undefined && document.activeElement !== input) {
               input.value = data[input.id];
               localStorage.setItem(input.id, input.value);
@@ -418,9 +534,44 @@
       });
       
       if (!isAuto) {
-        alert(`ID「${shareId}」で同期を開始しました！\n次回からページを開くと自動で同期されます。`);
+        alert(`ID「${shareId}」で同期を開始しました！`);
       }
     }
+
+    // ====== 新機能：手動で最新データを取得する機能 ======
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      if (!isSyncing || !currentSyncId) {
+        alert("同期が開始されていません。共有IDを入力して同期を開始してください。");
+        return;
+      }
+      
+      const tripRef = ref(db, 'trips/' + currentSyncId);
+      
+      // get() を使ってFirebaseから強制的に最新の1回分を取得
+      get(tripRef).then((snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          sharedInputs.forEach(input => {
+            if (data[input.id] !== undefined) {
+              input.value = data[input.id];
+              localStorage.setItem(input.id, input.value);
+            }
+          });
+          calculateTotal();
+          // ボタンの文字を一瞬変えて視覚的に完了を伝える
+          const btn = document.getElementById('btn-refresh');
+          const originalText = btn.innerHTML;
+          btn.innerHTML = "✨ 更新完了！";
+          setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+        } else {
+          alert("共有データが見つかりませんでした。");
+        }
+      }).catch((error) => {
+        console.error(error);
+        alert("データの取得に失敗しました。通信環境をご確認ください。");
+      });
+    });
+    // ===================================================
 
     // ページ読み込み時の処理
     window.addEventListener('DOMContentLoaded', () => {
@@ -454,7 +605,10 @@
           localStorage.setItem(input.id, input.value);
         }
 
-        if (input.classList.contains('cost-input')) calculateTotal();
+        // 費用関係や人数が変更されたら再計算
+        if (input.classList.contains('cost-calc') || input.id === 'trip-people') {
+          calculateTotal();
+        }
 
         if (isSyncing && input.classList.contains('shared-data')) {
           const tripRef = ref(db, 'trips/' + currentSyncId);
@@ -479,6 +633,8 @@
         allInputs.forEach(input => {
           if (input.type === 'checkbox') {
             input.checked = false;
+          } else if (input.id === 'trip-people') {
+            input.value = '4'; // 人数はデフォルトの4に戻す
           } else {
             input.value = '';
           }

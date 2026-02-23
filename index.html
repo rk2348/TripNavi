@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旅のプラン整理メモ</title>
+  <style>
+    :root {
+      --primary-color: #4A90E2;
+      --bg-color: #F4F7F6;
+      --card-bg: #FFFFFF;
+      --text-color: #333333;
+    }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 30px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      margin-top: 0;
+      border-bottom: 2px solid var(--primary-color);
+      padding-bottom: 10px;
+      font-size: 1.2rem;
+      color: var(--primary-color);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .row {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .row .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    /* 持ち物リスト用デザイン */
+    .checklist-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 10px;
+    }
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    .checklist-item input[type="text"] {
+      padding: 5px;
+      margin-left: 5px;
+      width: calc(100% - 30px);
+    }
+
+    /* 費用計算用デザイン */
+    .total-box {
+      background-color: #E8F4FD;
+      padding: 15px;
+      border-radius: 5px;
+      text-align: right;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    .total-box input {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary-color);
+      text-align: right;
+      width: 150px;
+      padding: 0;
+    }
+
+    .buttons {
+      text-align: center;
+      margin-top: 30px;
+    }
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      margin: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #357ABD;
+    }
+    .btn-clear {
+      background-color: #E74C3C;
+    }
+    .btn-clear:hover {
+      background-color: #C0392B;
+    }
+    
+    /* 印刷時の設定 */
+    @media print {
+      body { background-color: white; padding: 0; }
+      .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+      .buttons { display: none; }
+      input, textarea { border: none; background: transparent; resize: none; }
+      input[type="number"] { -moz-appearance: textfield; }
+      input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>✈️ 旅のプラン整理メモ</h1>
+
+    <div class="card">
+      <h2>📝 基本情報</h2>
+      <div class="form-group">
+        <label for="trip-title">旅行のタイトル・目的地</label>
+        <input type="text" id="trip-title" placeholder="例：秋の京都 2泊3日">
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label for="date-start">出発日</label>
+          <input type="date" id="date-start">
+        </div>
+        <div class="form-group">
+          <label for="date-end">帰宅日</label>
+          <input type="date" id="date-end">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🚌 交通手段（夜行バス・新幹線など）</h2>
+      <div class="row">
+        <div class="form-group">
+          <label for="bus-depart-time">行き：出発時間・乗車場所</label>
+          <input type="text" id="bus-depart-time" placeholder="例：23:15 バスタ新宿">
+        </div>
+        <div class="form-group">
+          <label for="bus-arrive-time">行き：到着時間・降車場所</label>
+          <input type="text" id="bus-arrive-time" placeholder="例：06:30 京都駅八条口">
+        </div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label for="bus-return-time">帰り：出発時間・乗車場所</label>
+          <input type="text" id="bus-return-time" placeholder="例：23:30 京都駅">
+        </div>
+        <div class="form-group">
+          <label for="bus-return-arrive">帰り：到着時間・降車場所</label>
+          <input type="text" id="bus-return-arrive" placeholder="例：06:45 バスタ新宿">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="bus-url">予約サイトのURL・予約番号</label>
+        <input type="text" id="bus-url" placeholder="URLや、予約番号123456 など">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🏨 宿泊先</h2>
+      <div class="form-group">
+        <label for="hotel-name">ホテル・宿の名前</label>
+        <input type="text" id="hotel-name" placeholder="例：ホテル〇〇京都">
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label for="check-in">チェックイン時間</label>
+          <input type="time" id="check-in">
+        </div>
+        <div class="form-group">
+          <label for="check-out">チェックアウト時間</label>
+          <input type="time" id="check-out">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="hotel-address">住所・アクセス</label>
+        <input type="text" id="hotel-address" placeholder="例：京都駅徒歩5分（京都府京都市〜）">
+      </div>
+      <div class="form-group">
+        <label for="hotel-url">予約サイトのURL・予約番号</label>
+        <input type="text" id="hotel-url" placeholder="URLや予約番号をメモ">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💴 費用メモ（概算）</h2>
+      <div class="row">
+        <div class="form-group">
+          <label for="cost-transport">交通費（円）</label>
+          <input type="number" id="cost-transport" class="cost-input" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label for="cost-hotel">宿泊費（円）</label>
+          <input type="number" id="cost-hotel" class="cost-input" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label for="cost-food">食費（円）</label>
+          <input type="number" id="cost-food" class="cost-input" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label for="cost-activity">観光・アクティビティ代（円）</label>
+          <input type="number" id="cost-activity" class="cost-input" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label for="cost-other">お土産・その他（円）</label>
+          <input type="number" id="cost-other" class="cost-input" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="total-box">
+        合計： <input type="text" id="cost-total" readonly value="0"> 円
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🎒 持ち物リスト</h2>
+      <div class="checklist-group">
+        <label class="checklist-item"><input type="checkbox" id="chk-1"> 現金・クレジットカード・身分証</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-2"> スマホ・充電器・モバイルバッテリー</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-3"> 着替え・下着・靴下</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-4"> 洗面用具・スキンケア・化粧品</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-5"> 常備薬・コンタクトレンズ</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-6"> パジャマ・ルームウェア</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-7"> 折りたたみ傘・雨具</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-8"> ビニール袋（洗濯物・ゴミ用）</label>
+        
+        <div class="checklist-item"><input type="checkbox" id="chk-free-1"><input type="text" id="txt-free-1" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-2"><input type="text" id="txt-free-2" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-3"><input type="text" id="txt-free-3" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-4"><input type="text" id="txt-free-4" placeholder="自由に入力"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🗺️ 行きたい場所・スケジュール・メモ</h2>
+      <div class="form-group">
+        <label for="schedule-memo">自由に書き込めるメモ帳（お店のURLや食べたいものなど）</label>
+        <textarea id="schedule-memo" placeholder="・1日目昼：〇〇食堂でランチ（URL）&#10;・行きたいカフェ：〇〇コーヒー&#10;・お土産に〇〇を買う"></textarea>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button onclick="window.print()">🖨️ PDFとして保存 / 印刷</button>
+      <button class="btn-clear" onclick="clearData()">🗑️ データをリセット</button>
+    </div>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll('input, textarea');
+
+    // 費用の合計を計算する関数
+    function calculateTotal() {
+      let total = 0;
+      document.querySelectorAll('.cost-input').forEach(input => {
+        const val = parseInt(input.value, 10);
+        if (!isNaN(val)) {
+          total += val;
+        }
+      });
+      const totalInput = document.getElementById('cost-total');
+      totalInput.value = total.toLocaleString();
+    }
+
+    // ページ読み込み時にデータを復元
+    window.addEventListener('DOMContentLoaded', () => {
+      inputs.forEach(input => {
+        const savedData = localStorage.getItem(input.id);
+        if (savedData !== null) {
+          if (input.type === 'checkbox') {
+            input.checked = (savedData === 'true');
+          } else {
+            input.value = savedData;
+          }
+        }
+      });
+      calculateTotal(); // 読み込み時にも合計を計算
+    });
+
+    // 入力やチェックがあるたびに保存・計算
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        if (input.type === 'checkbox') {
+          localStorage.setItem(input.id, input.checked);
+        } else {
+          localStorage.setItem(input.id, input.value);
+        }
+        
+        // 費用欄が変更されたら再計算
+        if (input.classList.contains('cost-input')) {
+          calculateTotal();
+        }
+      });
+    });
+
+    // データをリセット
+    function clearData() {
+      if (confirm('入力したデータを全て消去して、新しい旅のプランを作りますか？')) {
+        inputs.forEach(input => {
+          if (input.type === 'checkbox') {
+            input.checked = false;
+          } else {
+            input.value = '';
+          }
+          localStorage.removeItem(input.id);
+        });
+        calculateTotal();
+        window.scrollTo(0, 0);
+      }
+    }
+  </script>
+</body>
+</html>

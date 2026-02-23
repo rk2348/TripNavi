@@ -10,6 +10,7 @@
       --bg-color: #F4F7F6;
       --card-bg: #FFFFFF;
       --text-color: #333333;
+      --sync-color: #27AE60;
     }
     body {
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
@@ -41,6 +42,14 @@
       padding-bottom: 10px;
       font-size: 1.2rem;
       color: var(--primary-color);
+    }
+    .sync-card {
+      background-color: #E8F5E9;
+      border: 2px solid var(--sync-color);
+    }
+    .sync-card h2 {
+      color: var(--sync-color);
+      border-bottom-color: var(--sync-color);
     }
     .form-group {
       margin-bottom: 15px;
@@ -140,18 +149,34 @@
     button:hover {
       background-color: #357ABD;
     }
+    .btn-sync {
+      background-color: var(--sync-color);
+      margin-top: 25px;
+      width: 100%;
+    }
+    .btn-sync:hover {
+      background-color: #219653;
+    }
     .btn-clear {
       background-color: #E74C3C;
     }
     .btn-clear:hover {
       background-color: #C0392B;
     }
+    .sync-status {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--sync-color);
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
     
     /* 印刷時の設定 */
     @media print {
       body { background-color: white; padding: 0; }
       .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
-      .buttons { display: none; }
+      .sync-card, .buttons { display: none; }
       input, textarea { border: none; background: transparent; resize: none; }
       input[type="number"] { -moz-appearance: textfield; }
       input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -163,20 +188,35 @@
   <div class="container">
     <h1>✈️ 旅のプラン整理メモ</h1>
 
+    <div class="card sync-card">
+      <h2>🔄 リアルタイム共有</h2>
+      <p style="font-size: 0.9rem; margin-top: 0;">お互いに同じ「共有ID」を入力して同期を開始すると、プランを共同編集できます。（※持ち物リストは個人の端末にのみ保存され、共有されません）</p>
+      <div class="row">
+        <div class="form-group" style="flex: 2;">
+          <label for="share-id">共有ID（お好きな英数字を決めてください）</label>
+          <input type="text" id="share-id" placeholder="例：trip2026-osaka">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <button id="btn-start-sync" class="btn-sync">同期を開始する</button>
+        </div>
+      </div>
+      <div id="sync-status-text" class="sync-status">✅ 現在「<span id="display-sync-id"></span>」でリアルタイム同期中です</div>
+    </div>
+
     <div class="card">
       <h2>📝 基本情報</h2>
       <div class="form-group">
         <label for="trip-title">旅行のタイトル・目的地</label>
-        <input type="text" id="trip-title" placeholder="例：秋の京都 2泊3日">
+        <input type="text" id="trip-title" class="shared-data" placeholder="例：秋の京都 2泊3日">
       </div>
       <div class="row">
         <div class="form-group">
           <label for="date-start">出発日</label>
-          <input type="date" id="date-start">
+          <input type="date" id="date-start" class="shared-data">
         </div>
         <div class="form-group">
           <label for="date-end">帰宅日</label>
-          <input type="date" id="date-end">
+          <input type="date" id="date-end" class="shared-data">
         </div>
       </div>
     </div>
@@ -186,26 +226,26 @@
       <div class="row">
         <div class="form-group">
           <label for="bus-depart-time">行き：出発時間・乗車場所</label>
-          <input type="text" id="bus-depart-time" placeholder="例：23:15 バスタ新宿">
+          <input type="text" id="bus-depart-time" class="shared-data" placeholder="例：23:15 バスタ新宿">
         </div>
         <div class="form-group">
           <label for="bus-arrive-time">行き：到着時間・降車場所</label>
-          <input type="text" id="bus-arrive-time" placeholder="例：06:30 京都駅八条口">
+          <input type="text" id="bus-arrive-time" class="shared-data" placeholder="例：06:30 京都駅八条口">
         </div>
       </div>
       <div class="row">
         <div class="form-group">
           <label for="bus-return-time">帰り：出発時間・乗車場所</label>
-          <input type="text" id="bus-return-time" placeholder="例：23:30 京都駅">
+          <input type="text" id="bus-return-time" class="shared-data" placeholder="例：23:30 京都駅">
         </div>
         <div class="form-group">
           <label for="bus-return-arrive">帰り：到着時間・降車場所</label>
-          <input type="text" id="bus-return-arrive" placeholder="例：06:45 バスタ新宿">
+          <input type="text" id="bus-return-arrive" class="shared-data" placeholder="例：06:45 バスタ新宿">
         </div>
       </div>
       <div class="form-group">
         <label for="bus-url">予約サイトのURL・予約番号</label>
-        <input type="text" id="bus-url" placeholder="URLや、予約番号123456 など">
+        <input type="text" id="bus-url" class="shared-data" placeholder="URLや、予約番号123456 など">
       </div>
     </div>
 
@@ -213,25 +253,25 @@
       <h2>🏨 宿泊先</h2>
       <div class="form-group">
         <label for="hotel-name">ホテル・宿の名前</label>
-        <input type="text" id="hotel-name" placeholder="例：ホテル〇〇京都">
+        <input type="text" id="hotel-name" class="shared-data" placeholder="例：ホテル〇〇京都">
       </div>
       <div class="row">
         <div class="form-group">
           <label for="check-in">チェックイン時間</label>
-          <input type="time" id="check-in">
+          <input type="time" id="check-in" class="shared-data">
         </div>
         <div class="form-group">
           <label for="check-out">チェックアウト時間</label>
-          <input type="time" id="check-out">
+          <input type="time" id="check-out" class="shared-data">
         </div>
       </div>
       <div class="form-group">
         <label for="hotel-address">住所・アクセス</label>
-        <input type="text" id="hotel-address" placeholder="例：京都駅徒歩5分（京都府京都市〜）">
+        <input type="text" id="hotel-address" class="shared-data" placeholder="例：京都駅徒歩5分（京都府京都市〜）">
       </div>
       <div class="form-group">
         <label for="hotel-url">予約サイトのURL・予約番号</label>
-        <input type="text" id="hotel-url" placeholder="URLや予約番号をメモ">
+        <input type="text" id="hotel-url" class="shared-data" placeholder="URLや予約番号をメモ">
       </div>
     </div>
 
@@ -240,25 +280,25 @@
       <div class="row">
         <div class="form-group">
           <label for="cost-transport">交通費（円）</label>
-          <input type="number" id="cost-transport" class="cost-input" placeholder="0" min="0">
+          <input type="number" id="cost-transport" class="cost-input shared-data" placeholder="0" min="0">
         </div>
         <div class="form-group">
           <label for="cost-hotel">宿泊費（円）</label>
-          <input type="number" id="cost-hotel" class="cost-input" placeholder="0" min="0">
+          <input type="number" id="cost-hotel" class="cost-input shared-data" placeholder="0" min="0">
         </div>
       </div>
       <div class="row">
         <div class="form-group">
           <label for="cost-food">食費（円）</label>
-          <input type="number" id="cost-food" class="cost-input" placeholder="0" min="0">
+          <input type="number" id="cost-food" class="cost-input shared-data" placeholder="0" min="0">
         </div>
         <div class="form-group">
           <label for="cost-activity">観光・アクティビティ代（円）</label>
-          <input type="number" id="cost-activity" class="cost-input" placeholder="0" min="0">
+          <input type="number" id="cost-activity" class="cost-input shared-data" placeholder="0" min="0">
         </div>
         <div class="form-group">
           <label for="cost-other">お土産・その他（円）</label>
-          <input type="number" id="cost-other" class="cost-input" placeholder="0" min="0">
+          <input type="number" id="cost-other" class="cost-input shared-data" placeholder="0" min="0">
         </div>
       </div>
       <div class="total-box">
@@ -267,21 +307,21 @@
     </div>
 
     <div class="card">
-      <h2>🎒 持ち物リスト</h2>
+      <h2>🎒 持ち物リスト（※自分専用メモ）</h2>
       <div class="checklist-group">
-        <label class="checklist-item"><input type="checkbox" id="chk-1"> 現金・クレジットカード・身分証</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-2"> スマホ・充電器・モバイルバッテリー</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-3"> 着替え・下着・靴下</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-4"> 洗面用具・スキンケア・化粧品</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-5"> 常備薬・コンタクトレンズ</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-6"> パジャマ・ルームウェア</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-7"> 折りたたみ傘・雨具</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-8"> ビニール袋（洗濯物・ゴミ用）</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-1" class="private-data"> 現金・クレジットカード・身分証</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-2" class="private-data"> スマホ・充電器・モバイルバッテリー</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-3" class="private-data"> 着替え・下着・靴下</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-4" class="private-data"> 洗面用具・スキンケア・化粧品</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-5" class="private-data"> 常備薬・コンタクトレンズ</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-6" class="private-data"> パジャマ・ルームウェア</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-7" class="private-data"> 折りたたみ傘・雨具</label>
+        <label class="checklist-item"><input type="checkbox" id="chk-8" class="private-data"> ビニール袋（洗濯物・ゴミ用）</label>
         
-        <div class="checklist-item"><input type="checkbox" id="chk-free-1"><input type="text" id="txt-free-1" placeholder="自由に入力"></div>
-        <div class="checklist-item"><input type="checkbox" id="chk-free-2"><input type="text" id="txt-free-2" placeholder="自由に入力"></div>
-        <div class="checklist-item"><input type="checkbox" id="chk-free-3"><input type="text" id="txt-free-3" placeholder="自由に入力"></div>
-        <div class="checklist-item"><input type="checkbox" id="chk-free-4"><input type="text" id="txt-free-4" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-1" class="private-data"><input type="text" id="txt-free-1" class="private-data" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-2" class="private-data"><input type="text" id="txt-free-2" class="private-data" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-3" class="private-data"><input type="text" id="txt-free-3" class="private-data" placeholder="自由に入力"></div>
+        <div class="checklist-item"><input type="checkbox" id="chk-free-4" class="private-data"><input type="text" id="txt-free-4" class="private-data" placeholder="自由に入力"></div>
       </div>
     </div>
 
@@ -289,20 +329,39 @@
       <h2>🗺️ 行きたい場所・スケジュール・メモ</h2>
       <div class="form-group">
         <label for="schedule-memo">自由に書き込めるメモ帳（お店のURLや食べたいものなど）</label>
-        <textarea id="schedule-memo" placeholder="・1日目昼：〇〇食堂でランチ（URL）&#10;・行きたいカフェ：〇〇コーヒー&#10;・お土産に〇〇を買う"></textarea>
+        <textarea id="schedule-memo" class="shared-data" placeholder="・1日目昼：〇〇食堂でランチ（URL）&#10;・行きたいカフェ：〇〇コーヒー&#10;・お土産に〇〇を買う"></textarea>
       </div>
     </div>
 
     <div class="buttons">
       <button onclick="window.print()">🖨️ PDFとして保存 / 印刷</button>
-      <button class="btn-clear" onclick="clearData()">🗑️ データをリセット</button>
+      <button class="btn-clear" id="btn-clear-data">🗑️ データをリセット</button>
     </div>
   </div>
 
-  <script>
-    const inputs = document.querySelectorAll('input, textarea');
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // 費用の合計を計算する関数
+    // いただいた情報 ＋ データベースURLを追加した設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQ5Dig1lRAz3GihBnWFJBgHTLD864QWpg",
+      authDomain: "tripnavi-6363a.firebaseapp.com",
+      databaseURL: "https://tripnavi-6363a-default-rtdb.firebaseio.com",
+      projectId: "tripnavi-6363a",
+      storageBucket: "tripnavi-6363a.firebasestorage.app",
+      messagingSenderId: "946828759773",
+      appId: "1:946828759773:web:990ff142a2744c55b24134"
+    };
+
+    let app, db;
+    let currentSyncId = null;
+    let isSyncing = false;
+
+    const sharedInputs = document.querySelectorAll('.shared-data');
+    const privateInputs = document.querySelectorAll('.private-data');
+    const allInputs = document.querySelectorAll('input:not(#share-id), textarea');
+
     function calculateTotal() {
       let total = 0;
       document.querySelectorAll('.cost-input').forEach(input => {
@@ -311,13 +370,11 @@
           total += val;
         }
       });
-      const totalInput = document.getElementById('cost-total');
-      totalInput.value = total.toLocaleString();
+      document.getElementById('cost-total').value = total.toLocaleString();
     }
 
-    // ページ読み込み時にデータを復元
     window.addEventListener('DOMContentLoaded', () => {
-      inputs.forEach(input => {
+      allInputs.forEach(input => {
         const savedData = localStorage.getItem(input.id);
         if (savedData !== null) {
           if (input.type === 'checkbox') {
@@ -327,29 +384,78 @@
           }
         }
       });
-      calculateTotal(); // 読み込み時にも合計を計算
+      calculateTotal();
     });
 
-    // 入力やチェックがあるたびに保存・計算
-    inputs.forEach(input => {
+    allInputs.forEach(input => {
       input.addEventListener('input', () => {
         if (input.type === 'checkbox') {
           localStorage.setItem(input.id, input.checked);
         } else {
           localStorage.setItem(input.id, input.value);
         }
-        
-        // 費用欄が変更されたら再計算
-        if (input.classList.contains('cost-input')) {
-          calculateTotal();
+
+        if (input.classList.contains('cost-input')) calculateTotal();
+
+        if (isSyncing && input.classList.contains('shared-data')) {
+          const tripRef = ref(db, 'trips/' + currentSyncId);
+          update(tripRef, { [input.id]: input.value });
         }
       });
     });
 
-    // データをリセット
-    function clearData() {
-      if (confirm('入力したデータを全て消去して、新しい旅のプランを作りますか？')) {
-        inputs.forEach(input => {
+    document.getElementById('btn-start-sync').addEventListener('click', () => {
+      const shareId = document.getElementById('share-id').value.trim();
+      if (!shareId) {
+        alert("共有IDを入力してください。");
+        return;
+      }
+
+      if (!app) {
+        try {
+          app = initializeApp(firebaseConfig);
+          db = getDatabase(app);
+        } catch (error) {
+          alert("Firebaseの接続エラーです。設定を確認してください。");
+          console.error(error);
+          return;
+        }
+      }
+
+      currentSyncId = shareId;
+      isSyncing = true;
+      
+      document.getElementById('display-sync-id').textContent = shareId;
+      document.getElementById('sync-status-text').style.display = 'block';
+      
+      const tripRef = ref(db, 'trips/' + currentSyncId);
+      const initialData = {};
+      sharedInputs.forEach(input => {
+        if (input.value) initialData[input.id] = input.value;
+      });
+      if (Object.keys(initialData).length > 0) {
+        update(tripRef, initialData);
+      }
+
+      onValue(tripRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          sharedInputs.forEach(input => {
+            if (data[input.id] !== undefined && document.activeElement !== input) {
+              input.value = data[input.id];
+              localStorage.setItem(input.id, input.value);
+            }
+          });
+          calculateTotal();
+        }
+      });
+      
+      alert(`ID「${shareId}」で同期を開始しました！\n同じIDを入力した人と旅行プランが共有されます。`);
+    });
+
+    document.getElementById('btn-clear-data').addEventListener('click', () => {
+      if (confirm('入力したデータを全て消去しますか？\n（※同期中の場合、共有先のデータも消去されます）')) {
+        allInputs.forEach(input => {
           if (input.type === 'checkbox') {
             input.checked = false;
           } else {
@@ -358,9 +464,15 @@
           localStorage.removeItem(input.id);
         });
         calculateTotal();
+
+        if (isSyncing && currentSyncId) {
+          const tripRef = ref(db, 'trips/' + currentSyncId);
+          remove(tripRef);
+        }
+        
         window.scrollTo(0, 0);
       }
-    }
+    });
   </script>
 </body>
 </html>

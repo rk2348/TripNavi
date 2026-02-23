@@ -20,7 +20,7 @@
       color: var(--text-color);
       line-height: 1.6;
       margin: 0;
-      padding: 0; /* ヘッダー固定のため調整 */
+      padding: 0;
     }
     
     /* 上部固定の操作パネル（ヘッダー） */
@@ -181,7 +181,7 @@
       align-items: center;
       font-size: 0.95rem;
       background-color: #fcfcfc;
-      padding: 8px;
+      padding: 8px 12px;
       border-radius: 6px;
       border: 1px solid #eee;
     }
@@ -191,14 +191,27 @@
       margin-right: 10px;
       cursor: pointer;
     }
-    .checklist-item input[type="text"] {
-      padding: 4px 8px;
-      margin-left: 5px;
-      width: calc(100% - 30px);
-      border: none;
+    .checklist-item label {
+      margin: 0;
+      font-weight: normal;
+      color: var(--text-color);
+      flex: 1;
+      cursor: pointer;
+    }
+    .btn-delete-item {
       background: transparent;
-      border-bottom: 1px dashed #ccc;
-      border-radius: 0;
+      color: #bbb;
+      border: none;
+      padding: 0 5px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-left: auto;
+      transition: color 0.2s;
+    }
+    .btn-delete-item:hover {
+      color: var(--accent-color);
+      background: transparent;
+      opacity: 1;
     }
 
     /* 費用計算用デザイン */
@@ -276,6 +289,7 @@
       input, textarea { border: none; background: transparent; resize: none; }
       input[type="number"] { -moz-appearance: textfield; }
       input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      .btn-delete-item, #new-item-text, #btn-add-item { display: none; } /* 印刷時は追加・削除ボタンを隠す */
     }
   </style>
 </head>
@@ -320,21 +334,8 @@
 
       <div class="card">
         <h2>🗺️ 日程表・スケジュール</h2>
-        
-        <div class="schedule-day">
-          <h3>Day 1（1日目）</h3>
-          <textarea id="schedule-day1" class="shared-data" placeholder="例：&#10;22:30 金沢駅西口 集合&#10;23:00 夜行バス出発"></textarea>
-        </div>
-        
-        <div class="schedule-day">
-          <h3>Day 2（2日目）</h3>
-          <textarea id="schedule-day2" class="shared-data" placeholder="例：&#10;06:30 バスタ新宿 到着&#10;10:00 〇〇で観光&#10;15:00 ホテルチェックイン"></textarea>
-        </div>
-
-        <div class="schedule-day">
-          <h3>Day 3（3日目）</h3>
-          <textarea id="schedule-day3" class="shared-data" placeholder="例：&#10;10:00 チェックアウト&#10;23:30 バスタ新宿発 バス乗車"></textarea>
-        </div>
+        <div id="schedule-container">
+          </div>
       </div>
     </div> <div class="column-right" style="display: flex; flex-direction: column; gap: 20px;">
       
@@ -418,20 +419,12 @@
 
     </div> <div class="card full-width">
       <h2>🎒 持ち物リスト（※自分専用メモ / 共有されません）</h2>
-      <div class="checklist-group">
-        <label class="checklist-item"><input type="checkbox" id="chk-1" class="private-data"> 財布・身分証</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-2" class="private-data"> スマホ・モバイルバッテリー</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-3" class="private-data"> 着替え・下着類</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-4" class="private-data"> 洗面・スキンケア用品</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-5" class="private-data"> 常備薬・コンタクト</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-6" class="private-data"> パジャマ・部屋着</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-7" class="private-data"> 折りたたみ傘</label>
-        <label class="checklist-item"><input type="checkbox" id="chk-8" class="private-data"> ビニール袋・エコバッグ</label>
-        
-        <div class="checklist-item"><input type="checkbox" id="chk-free-1" class="private-data"><input type="text" id="txt-free-1" class="private-data" placeholder="自由に入力"></div>
-        <div class="checklist-item"><input type="checkbox" id="chk-free-2" class="private-data"><input type="text" id="txt-free-2" class="private-data" placeholder="自由に入力"></div>
-        <div class="checklist-item"><input type="checkbox" id="chk-free-3" class="private-data"><input type="text" id="txt-free-3" class="private-data" placeholder="自由に入力"></div>
-        <div class="checklist-item"><input type="checkbox" id="chk-free-4" class="private-data"><input type="text" id="txt-free-4" class="private-data" placeholder="自由に入力"></div>
+      
+      <div id="checklist-container" class="checklist-group"></div>
+      
+      <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="new-item-text" placeholder="新しい持ち物を入力（例：カメラの充電器）" style="flex: 1; max-width: 300px;">
+        <button id="btn-add-item" style="padding: 10px 15px; background-color: #3498DB;">＋ 追加</button>
       </div>
     </div>
 
@@ -441,11 +434,9 @@
     </div>
 
   </div> <script type="module">
-    // Firebaseモジュールのインポート（get関数を新たに追加）
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getDatabase, ref, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
-    // いただいた情報 ＋ データベースURLを追加した設定
     const firebaseConfig = {
       apiKey: "AIzaSyCQ5Dig1lRAz3GihBnWFJBgHTLD864QWpg",
       authDomain: "tripnavi-6363a.firebaseapp.com",
@@ -460,33 +451,205 @@
     let currentSyncId = null;
     let isSyncing = false;
 
-    // 要素の取得
-    const sharedInputs = document.querySelectorAll('.shared-data');
-    const privateInputs = document.querySelectorAll('.private-data');
-    const allInputs = document.querySelectorAll('input:not(#share-id):not(#cost-total):not(#cost-per-person), textarea');
+    // ==========================================
+    // 持ち物リストの管理機能（追加・削除・保存）
+    // ==========================================
+    const defaultChecklist = [
+      { id: 'item-1', text: '財布・身分証', checked: false },
+      { id: 'item-2', text: 'スマホ・モバイルバッテリー', checked: false },
+      { id: 'item-3', text: '着替え・下着類', checked: false },
+      { id: 'item-4', text: '洗面・スキンケア用品', checked: false },
+      { id: 'item-5', text: '常備薬・コンタクト', checked: false },
+      { id: 'item-6', text: 'パジャマ・部屋着', checked: false },
+      { id: 'item-7', text: '折りたたみ傘', checked: false },
+      { id: 'item-8', text: 'ビニール袋・エコバッグ', checked: false }
+    ];
+
+    let currentChecklist = [];
+
+    // 持ち物リストを画面に描画する関数
+    function renderChecklist() {
+      const container = document.getElementById('checklist-container');
+      container.innerHTML = '';
+      
+      currentChecklist.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'checklist-item';
+        
+        // チェックボックス
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = item.id;
+        checkbox.checked = item.checked;
+        checkbox.addEventListener('change', (e) => {
+          item.checked = e.target.checked;
+          saveChecklist(); // 状態が変わるたびに保存
+        });
+
+        // ラベル（テキスト）
+        const label = document.createElement('label');
+        label.htmlFor = item.id;
+        label.textContent = item.text;
+
+        // 削除ボタン
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '×';
+        deleteBtn.className = 'btn-delete-item';
+        deleteBtn.title = 'この項目を削除';
+        deleteBtn.addEventListener('click', () => {
+          currentChecklist = currentChecklist.filter(i => i.id !== item.id);
+          saveChecklist();
+          renderChecklist();
+        });
+
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        div.appendChild(deleteBtn);
+        container.appendChild(div);
+      });
+    }
+
+    // 持ち物リストをローカルストレージに保存する関数
+    function saveChecklist() {
+      localStorage.setItem('private-checklist', JSON.stringify(currentChecklist));
+    }
+
+    // 持ち物リストを読み込む関数
+    function loadChecklist() {
+      const saved = localStorage.getItem('private-checklist');
+      if (saved) {
+        currentChecklist = JSON.parse(saved);
+      } else {
+        // 保存データがない場合はデフォルトのリストをコピーして使用
+        currentChecklist = JSON.parse(JSON.stringify(defaultChecklist));
+      }
+      renderChecklist();
+    }
+
+    // 「＋ 追加」ボタンの処理
+    document.getElementById('btn-add-item').addEventListener('click', () => {
+      const input = document.getElementById('new-item-text');
+      const text = input.value.trim();
+      if (text) {
+        const newItem = {
+          id: 'item-' + Date.now(), // 一意のIDを生成
+          text: text,
+          checked: false
+        };
+        currentChecklist.push(newItem);
+        saveChecklist();
+        renderChecklist();
+        input.value = ''; // 入力欄を空にする
+      }
+    });
+
+    // Enterキーでも持ち物を追加できるようにする
+    document.getElementById('new-item-text').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('btn-add-item').click();
+      }
+    });
+    // ==========================================
+
 
     // 費用の合計と、1人あたりの金額を計算する関数
     function calculateTotal() {
       let total = 0;
-      // .cost-calc クラスを持つ入力欄を合算
       document.querySelectorAll('.cost-calc').forEach(input => {
         const val = parseInt(input.value, 10);
         if (!isNaN(val)) total += val;
       });
       document.getElementById('cost-total').value = total.toLocaleString();
 
-      // 人数で割って1人あたりの金額を計算
       const peopleInput = document.getElementById('trip-people').value;
       const people = parseInt(peopleInput, 10);
       if (!isNaN(people) && people > 0) {
-        const perPerson = Math.ceil(total / people); // 切り上げ
+        const perPerson = Math.ceil(total / people);
         document.getElementById('cost-per-person').value = perPerson.toLocaleString();
       } else {
         document.getElementById('cost-per-person').value = "0";
       }
     }
 
-    // 同期処理をまとめた関数（isAutoがtrueの場合はアラートを出さない）
+    // 日付に応じてスケジュール枠を増減・更新する関数
+    function updateScheduleDays() {
+      const startStr = document.getElementById('date-start').value;
+      const endStr = document.getElementById('date-end').value;
+      const container = document.getElementById('schedule-container');
+      
+      let days = 3; // デフォルトは3日間
+      let startDate = null;
+
+      if (startStr) {
+        startDate = new Date(startStr);
+      }
+
+      if (startStr && endStr) {
+        const end = new Date(endStr);
+        const diff = (end - startDate) / (1000 * 60 * 60 * 24);
+        if (diff >= 0 && diff <= 30) {
+          days = diff + 1;
+        } else if (diff < 0) {
+          days = 1;
+        }
+      }
+
+      const currentDays = container.querySelectorAll('.schedule-day').length;
+
+      if (days > currentDays) {
+        for (let i = currentDays + 1; i <= days; i++) {
+          addScheduleDay(i, container);
+        }
+      } else if (days < currentDays) {
+        for (let i = currentDays; i > days; i--) {
+          const el = document.getElementById(`schedule-day-wrapper-${i}`);
+          if (el) el.remove();
+        }
+      }
+
+      for (let i = 1; i <= days; i++) {
+        const wrapper = document.getElementById(`schedule-day-wrapper-${i}`);
+        if (wrapper) {
+          const title = wrapper.querySelector('h3');
+          let dateText = '';
+          if (startDate) {
+            const d = new Date(startDate);
+            d.setDate(d.getDate() + i - 1);
+            const month = d.getMonth() + 1;
+            const date = d.getDate();
+            const daysOfWeek = ['日', '月', '火', '水', '木', '金', '土'];
+            const dayOfWeek = daysOfWeek[d.getDay()];
+            dateText = ` （${month}/${date} ${dayOfWeek}）`;
+          }
+          title.textContent = `Day ${i}${dateText}`;
+        }
+      }
+    }
+
+    function addScheduleDay(dayNum, container) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'schedule-day';
+      wrapper.id = `schedule-day-wrapper-${dayNum}`;
+      
+      const title = document.createElement('h3');
+      title.textContent = `Day ${dayNum}`;
+      wrapper.appendChild(title);
+      
+      const textarea = document.createElement('textarea');
+      textarea.id = `schedule-day${dayNum}`;
+      textarea.className = 'shared-data';
+      
+      if (dayNum === 1) textarea.placeholder = "例：\n22:30 金沢駅西口 集合\n23:00 夜行バス出発";
+      else textarea.placeholder = `例：\nDay ${dayNum} のスケジュール`;
+      
+      wrapper.appendChild(textarea);
+      container.appendChild(wrapper);
+
+      const savedData = localStorage.getItem(textarea.id);
+      if (savedData) textarea.value = savedData;
+    }
+
+    // 同期処理をまとめた関数
     function startSync(shareId, isAuto = false) {
       if (!app) {
         try {
@@ -501,29 +664,34 @@
 
       currentSyncId = shareId;
       isSyncing = true;
-      
-      // 次回自動同期のためにIDを保存
       localStorage.setItem('savedSyncId', shareId);
-      
       document.getElementById('sync-status-text').style.display = 'inline-block';
       
       const tripRef = ref(db, 'trips/' + currentSyncId);
       const initialData = {};
       
-      // ローカルにあるデータをFirebaseに統合
-      sharedInputs.forEach(input => {
+      document.querySelectorAll('.shared-data').forEach(input => {
         if (input.value) initialData[input.id] = input.value;
       });
       if (Object.keys(initialData).length > 0) {
         update(tripRef, initialData);
       }
 
-      // リアルタイム監視（誰かが更新したら自動反映）
       onValue(tripRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          sharedInputs.forEach(input => {
-            // 自分が今入力中の項目は上書きしない（カーソル飛び防止）
+          let dateChanged = false;
+          if (data['date-start'] !== undefined && document.activeElement.id !== 'date-start') {
+            document.getElementById('date-start').value = data['date-start'];
+            dateChanged = true;
+          }
+          if (data['date-end'] !== undefined && document.activeElement.id !== 'date-end') {
+            document.getElementById('date-end').value = data['date-end'];
+            dateChanged = true;
+          }
+          if (dateChanged) updateScheduleDays();
+
+          document.querySelectorAll('.shared-data').forEach(input => {
             if (data[input.id] !== undefined && document.activeElement !== input) {
               input.value = data[input.id];
               localStorage.setItem(input.id, input.value);
@@ -538,7 +706,7 @@
       }
     }
 
-    // ====== 新機能：手動で最新データを取得する機能 ======
+    // 手動で最新データを取得する機能
     document.getElementById('btn-refresh').addEventListener('click', () => {
       if (!isSyncing || !currentSyncId) {
         alert("同期が開始されていません。共有IDを入力して同期を開始してください。");
@@ -547,18 +715,29 @@
       
       const tripRef = ref(db, 'trips/' + currentSyncId);
       
-      // get() を使ってFirebaseから強制的に最新の1回分を取得
       get(tripRef).then((snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          sharedInputs.forEach(input => {
+          
+          let dateChanged = false;
+          if (data['date-start'] !== undefined) {
+            document.getElementById('date-start').value = data['date-start'];
+            dateChanged = true;
+          }
+          if (data['date-end'] !== undefined) {
+            document.getElementById('date-end').value = data['date-end'];
+            dateChanged = true;
+          }
+          if (dateChanged) updateScheduleDays();
+
+          document.querySelectorAll('.shared-data').forEach(input => {
             if (data[input.id] !== undefined) {
               input.value = data[input.id];
               localStorage.setItem(input.id, input.value);
             }
           });
           calculateTotal();
-          // ボタンの文字を一瞬変えて視覚的に完了を伝える
+          
           const btn = document.getElementById('btn-refresh');
           const originalText = btn.innerHTML;
           btn.innerHTML = "✨ 更新完了！";
@@ -571,12 +750,27 @@
         alert("データの取得に失敗しました。通信環境をご確認ください。");
       });
     });
-    // ===================================================
 
     // ページ読み込み時の処理
     window.addEventListener('DOMContentLoaded', () => {
-      // ローカルストレージからデータを復元
-      allInputs.forEach(input => {
+      // 1. 持ち物リストを読み込んで表示
+      loadChecklist();
+
+      // 2. 日付を復元する
+      ['date-start', 'date-end'].forEach(id => {
+        const savedData = localStorage.getItem(id);
+        if (savedData !== null) {
+          document.getElementById(id).value = savedData;
+        }
+      });
+      
+      // 3. 復元した日付をもとに、スケジュール枠を必要な数だけ生成する
+      updateScheduleDays();
+
+      // 4. その他のすべてのデータを復元する
+      document.querySelectorAll('input:not(#share-id):not(#cost-total):not(#cost-per-person):not(#new-item-text), textarea').forEach(input => {
+        if (input.id === 'date-start' || input.id === 'date-end') return;
+        
         const savedData = localStorage.getItem(input.id);
         if (savedData !== null) {
           if (input.type === 'checkbox') {
@@ -588,36 +782,41 @@
       });
       calculateTotal();
 
-      // 自動同期のチェック
       const savedSyncId = localStorage.getItem('savedSyncId');
       if (savedSyncId) {
         document.getElementById('share-id').value = savedSyncId;
-        startSync(savedSyncId, true); // 自動同期開始（アラートなし）
+        startSync(savedSyncId, true);
       }
     });
 
-    // 入力時の処理（ローカル保存＋Firebase送信）
-    allInputs.forEach(input => {
-      input.addEventListener('input', () => {
-        if (input.type === 'checkbox') {
-          localStorage.setItem(input.id, input.checked);
-        } else {
-          localStorage.setItem(input.id, input.value);
-        }
+    // 画面上のあらゆる入力変更を検知する（持ち物追加用のinputなどは除外）
+    document.addEventListener('input', (e) => {
+      const input = e.target;
+      
+      if (!input.matches('input:not(#share-id):not(#cost-total):not(#cost-per-person):not(#new-item-text), textarea')) return;
+      if (input.type === 'checkbox' && input.closest('#checklist-container')) return; // 持ち物のチェックボックスは専用処理で保存
 
-        // 費用関係や人数が変更されたら再計算
-        if (input.classList.contains('cost-calc') || input.id === 'trip-people') {
-          calculateTotal();
-        }
+      // ローカル保存
+      if (input.type === 'checkbox') {
+        localStorage.setItem(input.id, input.checked);
+      } else {
+        localStorage.setItem(input.id, input.value);
+      }
 
-        if (isSyncing && input.classList.contains('shared-data')) {
-          const tripRef = ref(db, 'trips/' + currentSyncId);
-          update(tripRef, { [input.id]: input.value });
-        }
-      });
+      if (input.classList.contains('cost-calc') || input.id === 'trip-people') {
+        calculateTotal();
+      }
+
+      if (input.id === 'date-start' || input.id === 'date-end') {
+        updateScheduleDays();
+      }
+
+      if (isSyncing && input.classList.contains('shared-data')) {
+        const tripRef = ref(db, 'trips/' + currentSyncId);
+        update(tripRef, { [input.id]: input.value });
+      }
     });
 
-    // 手動で同期を開始するボタン
     document.getElementById('btn-start-sync').addEventListener('click', () => {
       const shareId = document.getElementById('share-id').value.trim();
       if (!shareId) {
@@ -627,10 +826,10 @@
       startSync(shareId, false);
     });
 
-    // データリセット処理
     document.getElementById('btn-clear-data').addEventListener('click', () => {
       if (confirm('入力したデータを全て消去しますか？\n（※同期中の場合、共有先のデータも消去されます）')) {
-        allInputs.forEach(input => {
+        // 通常の入力欄をクリア
+        document.querySelectorAll('input:not(#share-id):not(#cost-total):not(#cost-per-person):not(#new-item-text), textarea').forEach(input => {
           if (input.type === 'checkbox') {
             input.checked = false;
           } else if (input.id === 'trip-people') {
@@ -641,7 +840,13 @@
           localStorage.removeItem(input.id);
         });
         
-        // 保存した同期IDも削除する
+        // 持ち物リストを初期状態にリセット
+        localStorage.removeItem('private-checklist');
+        currentChecklist = JSON.parse(JSON.stringify(defaultChecklist));
+        renderChecklist();
+        
+        updateScheduleDays();
+
         localStorage.removeItem('savedSyncId');
         document.getElementById('share-id').value = '';
         document.getElementById('sync-status-text').style.display = 'none';

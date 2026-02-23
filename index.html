@@ -194,20 +194,20 @@
       <div class="row">
         <div class="form-group" style="flex: 2;">
           <label for="share-id">共有ID（お好きな英数字を決めてください）</label>
-          <input type="text" id="share-id" placeholder="例：trip2026-osaka">
+          <input type="text" id="share-id" placeholder="例：trip2026-tokyo">
         </div>
         <div class="form-group" style="flex: 1;">
-          <button id="btn-start-sync" class="btn-sync">同期を開始する</button>
+          <button id="btn-start-sync" class="btn-sync">手動で同期を開始する</button>
         </div>
       </div>
-      <div id="sync-status-text" class="sync-status">✅ 現在「<span id="display-sync-id"></span>」でリアルタイム同期中です</div>
+      <div id="sync-status-text" class="sync-status">✅ 現在「<span id="display-sync-id"></span>」で自動同期中です</div>
     </div>
 
     <div class="card">
       <h2>📝 基本情報</h2>
       <div class="form-group">
         <label for="trip-title">旅行のタイトル・目的地</label>
-        <input type="text" id="trip-title" class="shared-data" placeholder="例：秋の京都 2泊3日">
+        <input type="text" id="trip-title" class="shared-data" placeholder="例：石川〜東京 旅行（4人）">
       </div>
       <div class="row">
         <div class="form-group">
@@ -226,21 +226,21 @@
       <div class="row">
         <div class="form-group">
           <label for="bus-depart-time">行き：出発時間・乗車場所</label>
-          <input type="text" id="bus-depart-time" class="shared-data" placeholder="例：23:15 バスタ新宿">
+          <input type="text" id="bus-depart-time" class="shared-data" placeholder="例：22:30 金沢駅西口">
         </div>
         <div class="form-group">
           <label for="bus-arrive-time">行き：到着時間・降車場所</label>
-          <input type="text" id="bus-arrive-time" class="shared-data" placeholder="例：06:30 京都駅八条口">
+          <input type="text" id="bus-arrive-time" class="shared-data" placeholder="例：06:30 バスタ新宿">
         </div>
       </div>
       <div class="row">
         <div class="form-group">
           <label for="bus-return-time">帰り：出発時間・乗車場所</label>
-          <input type="text" id="bus-return-time" class="shared-data" placeholder="例：23:30 京都駅">
+          <input type="text" id="bus-return-time" class="shared-data" placeholder="例：23:30 バスタ新宿">
         </div>
         <div class="form-group">
           <label for="bus-return-arrive">帰り：到着時間・降車場所</label>
-          <input type="text" id="bus-return-arrive" class="shared-data" placeholder="例：06:45 バスタ新宿">
+          <input type="text" id="bus-return-arrive" class="shared-data" placeholder="例：07:00 金沢駅西口">
         </div>
       </div>
       <div class="form-group">
@@ -253,7 +253,7 @@
       <h2>🏨 宿泊先</h2>
       <div class="form-group">
         <label for="hotel-name">ホテル・宿の名前</label>
-        <input type="text" id="hotel-name" class="shared-data" placeholder="例：ホテル〇〇京都">
+        <input type="text" id="hotel-name" class="shared-data" placeholder="例：ホテル〇〇東京">
       </div>
       <div class="row">
         <div class="form-group">
@@ -267,7 +267,7 @@
       </div>
       <div class="form-group">
         <label for="hotel-address">住所・アクセス</label>
-        <input type="text" id="hotel-address" class="shared-data" placeholder="例：京都駅徒歩5分（京都府京都市〜）">
+        <input type="text" id="hotel-address" class="shared-data" placeholder="例：新宿駅徒歩5分（東京都新宿区〜）">
       </div>
       <div class="form-group">
         <label for="hotel-url">予約サイトのURL・予約番号</label>
@@ -373,50 +373,14 @@
       document.getElementById('cost-total').value = total.toLocaleString();
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      allInputs.forEach(input => {
-        const savedData = localStorage.getItem(input.id);
-        if (savedData !== null) {
-          if (input.type === 'checkbox') {
-            input.checked = (savedData === 'true');
-          } else {
-            input.value = savedData;
-          }
-        }
-      });
-      calculateTotal();
-    });
-
-    allInputs.forEach(input => {
-      input.addEventListener('input', () => {
-        if (input.type === 'checkbox') {
-          localStorage.setItem(input.id, input.checked);
-        } else {
-          localStorage.setItem(input.id, input.value);
-        }
-
-        if (input.classList.contains('cost-input')) calculateTotal();
-
-        if (isSyncing && input.classList.contains('shared-data')) {
-          const tripRef = ref(db, 'trips/' + currentSyncId);
-          update(tripRef, { [input.id]: input.value });
-        }
-      });
-    });
-
-    document.getElementById('btn-start-sync').addEventListener('click', () => {
-      const shareId = document.getElementById('share-id').value.trim();
-      if (!shareId) {
-        alert("共有IDを入力してください。");
-        return;
-      }
-
+    // 同期処理をまとめた関数（isAutoがtrueの場合はアラートを出さない）
+    function startSync(shareId, isAuto = false) {
       if (!app) {
         try {
           app = initializeApp(firebaseConfig);
           db = getDatabase(app);
         } catch (error) {
-          alert("Firebaseの接続エラーです。設定を確認してください。");
+          if (!isAuto) alert("Firebaseの接続エラーです。設定を確認してください。");
           console.error(error);
           return;
         }
@@ -424,6 +388,9 @@
 
       currentSyncId = shareId;
       isSyncing = true;
+      
+      // 次回自動同期のためにIDを保存
+      localStorage.setItem('savedSyncId', shareId);
       
       document.getElementById('display-sync-id').textContent = shareId;
       document.getElementById('sync-status-text').style.display = 'block';
@@ -450,9 +417,63 @@
         }
       });
       
-      alert(`ID「${shareId}」で同期を開始しました！\n同じIDを入力した人と旅行プランが共有されます。`);
+      if (!isAuto) {
+        alert(`ID「${shareId}」で同期を開始しました！\n次回からページを開くと自動で同期されます。`);
+      }
+    }
+
+    // ページ読み込み時の処理
+    window.addEventListener('DOMContentLoaded', () => {
+      // ローカルストレージからデータを復元
+      allInputs.forEach(input => {
+        const savedData = localStorage.getItem(input.id);
+        if (savedData !== null) {
+          if (input.type === 'checkbox') {
+            input.checked = (savedData === 'true');
+          } else {
+            input.value = savedData;
+          }
+        }
+      });
+      calculateTotal();
+
+      // 自動同期のチェック
+      const savedSyncId = localStorage.getItem('savedSyncId');
+      if (savedSyncId) {
+        document.getElementById('share-id').value = savedSyncId;
+        startSync(savedSyncId, true); // 自動同期開始（アラートなし）
+      }
     });
 
+    // 入力時の処理（ローカル保存＋Firebase送信）
+    allInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        if (input.type === 'checkbox') {
+          localStorage.setItem(input.id, input.checked);
+        } else {
+          localStorage.setItem(input.id, input.value);
+        }
+
+        if (input.classList.contains('cost-input')) calculateTotal();
+
+        if (isSyncing && input.classList.contains('shared-data')) {
+          const tripRef = ref(db, 'trips/' + currentSyncId);
+          update(tripRef, { [input.id]: input.value });
+        }
+      });
+    });
+
+    // 手動で同期を開始するボタン
+    document.getElementById('btn-start-sync').addEventListener('click', () => {
+      const shareId = document.getElementById('share-id').value.trim();
+      if (!shareId) {
+        alert("共有IDを入力してください。");
+        return;
+      }
+      startSync(shareId, false);
+    });
+
+    // データリセット処理
     document.getElementById('btn-clear-data').addEventListener('click', () => {
       if (confirm('入力したデータを全て消去しますか？\n（※同期中の場合、共有先のデータも消去されます）')) {
         allInputs.forEach(input => {
@@ -463,6 +484,12 @@
           }
           localStorage.removeItem(input.id);
         });
+        
+        // 保存した同期IDも削除する
+        localStorage.removeItem('savedSyncId');
+        document.getElementById('share-id').value = '';
+        document.getElementById('sync-status-text').style.display = 'none';
+
         calculateTotal();
 
         if (isSyncing && currentSyncId) {
@@ -470,6 +497,8 @@
           remove(tripRef);
         }
         
+        isSyncing = false;
+        currentSyncId = null;
         window.scrollTo(0, 0);
       }
     });
